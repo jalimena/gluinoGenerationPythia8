@@ -17,10 +17,12 @@ edit Makefile.inc to set:
 ```HEPMC2_USE=true```
 and
 ```HEPMC3_USE=true```
+So then it should look like my ```Makefile.inc``` included here
 
+do:
 ```gmake```
 
-copy gluinoGeneration.cc and HSCP_gluino_300_SLHA.spc to the examples/ directory
+copy gluinoGeneration.cc, HSCP_gluino_300_SLHA.spc, and Makefile to the examples/ directory
 
 compile gluinoGeneration.cc with:
 ```make gluinoGeneration```
@@ -28,6 +30,6 @@ compile gluinoGeneration.cc with:
 run gluinoGeneration.cc with:
 ```./gluinoGeneration```
 you can do maybe:
-```nohup ./gluinoGeneration > & out &```
+```nohup ./gluinoGeneration >& out &```
 
 it should just take a few seconds to generate 200 events
