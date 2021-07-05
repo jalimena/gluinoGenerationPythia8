@@ -10,10 +10,10 @@
 // are extras that need not be used for the basic setup.
 
 #include "Pythia8/Pythia.h"
-
-//#include "TH1.h"
-//#include "TFile.h"
-//#include "TApplication.h" // ROOT, for interactive graphics.
+#include "TROOT.h"
+#include "TH1.h"
+#include "TFile.h"
+#include "TApplication.h" // ROOT, for interactive graphics.
 
 using namespace Pythia8;
 
@@ -71,6 +71,8 @@ int main(int argc, char* argv[]) {
   // JA: yes, we want r-hadrons to be created but for them not to decay
   pythia.readString("RHadrons:allowDecay = off");
 
+  pythia.readString("RHadrons:setMasses = on");
+
   // Fraction of gluinoballs.
   // JA: same gluinoball fraction as HSCP search
   pythia.readString("RHadrons:probGluinoball = 0.1");
@@ -88,6 +90,7 @@ int main(int argc, char* argv[]) {
   //pythia.readString("1000002:tau0 = 200.");
   //pythia.readString("1000006:tau0 = 250.");
   //pythia.readString("1000021:tau0 = 300.");
+  pythia.readString("1000021:tau0 = 1000000"); //JA: set gluino ctau to be 1km
 
   // Checks. Optionally relax E-p-conservation.
   pythia.readString("Check:nErrList = 2");
@@ -106,32 +109,21 @@ int main(int argc, char* argv[]) {
   pythia.init();
 
   // Create the ROOT application environment.
-  //TApplication theApp("hist", &argc, argv);
+  TApplication theApp("hist", &argc, argv);
 
   // Create file on which histogram(s) can be saved.
-  //TFile* outFile = new TFile("hist.root", "RECREATE");
+  TFile* outFile = new TFile("hist.root", "RECREATE");
 
   // Histograms.
   // JA: Jasmine, you can add more histograms here
-  /*
   TH1F *nChargedH = new TH1F("nChargedH", "charged multiplicity", 100, -0.5, 799.5);
   TH1F *dndyChargedH = new TH1F("dndyChargedH", "dn/dy charged", 100, -10., 10.);
   TH1F *dndyRH = new TH1F("dndyRH", "dn/dy R-hadrons", 100, -5., 5.);
-  TH1F *pTRH = new TH1F("pTRH", "pT R-hadrons", 100, 0., 1000.);
+  TH1F *pTRH = new TH1F("pTRH", "pT of R-hadrons", 100, 0., 1000.);
+  TH1F *etaRH = new TH1F("etaRH", "eta of R-hadrons", 100, -5, 5);
   TH1F *xRH = new TH1F("xRH", "p_RHadron / p_sparticle", 100, 0.9, 1.1);
   TH1F *mDiff = new TH1F("mDiff", "m(Rhadron) - m(sparticle)", 100, 0., 5.);
   TH1F *decVtx = new TH1F("decVtx", "R-hadron decay vertex (mm from origin)", 100, 0., 1000.);
-  TH1F *eta = new TH1F("eta", "eta", 100, -5, 5);
-  */
-
-  Hist nChargedH("charged multiplicity", 100, -0.5, 799.5);
-  Hist dndyChargedH("dn/dy charged", 100, -10., 10.);
-  Hist dndyRH("dn/dy R-hadrons", 100, -5., 5.);
-  Hist pTRH("pT R-hadrons", 100, 0., 1000.);
-  Hist xRH("p_RHadron / p_sparticle", 100, 0.9, 1.1);
-  Hist mDiff("m(Rhadron) - m(sparticle)", 100, 0., 5.);
-  Hist decVtx("R-hadron decay vertex (mm from origin)", 100, 0., 1000.);
-  Hist eta("eta", 100, -5, 5);
 
   // R-hadron flavour composition.
   map<int, int> flavours;
@@ -156,33 +148,34 @@ int main(int argc, char* argv[]) {
         pSum += event[i].p();
         if (event[i].isCharged()) {
           ++nCharged;
-          dndyChargedH.fill( event[i].y() );
+          dndyChargedH->Fill( event[i].y() );
         }
       }
     }
-    nChargedH.fill( nCharged );
+    nChargedH->Fill( nCharged );
 
     // Loop over final R-hadrons in the event: kinematic distribution
     for (int i = 0; i < event.size(); ++i) {
       int idAbs = event[i].idAbs();
       if (idAbs > 1000100 && idAbs < 2000000 && idAbs != 1009002) {
         ++flavours[ event[i].id() ];
-        dndyRH.fill( event[i].y() );
-        pTRH.fill( event[i].pT() );
-        eta.fill( event[i].eta() );
+        dndyRH->Fill( event[i].y() );
+        pTRH->Fill( event[i].pT() );
+        etaRH->Fill( event[i].eta() );
+
         // Trace back to mother; compare momenta and masses.
         int iMother = i;
         while( event[iMother].statusAbs() > 100)
           iMother = event[iMother].mother1();
         double xFrac = event[i].pAbs() / event[iMother].pAbs();
-        xRH.fill( xFrac);
+        xRH->Fill( xFrac);
         double mShift = event[i].m() - event[iMother].m();
-        mDiff.fill( mShift );
+        mDiff->Fill( mShift );
         // Separation of R-hadron decay vertex from origin.
         // Don't be fooled by pAbs(); it gives the three-vector length
         // of any Vec4, also one representing spatial coordinates.
         double dist = event[i].vDec().pAbs();
-        decVtx.fill( dist);
+        decVtx->Fill( dist);
 
         // This is a place where you could allow a R-hadron shift of
         // identity, momentum and decay vertex to allow for detector effects.
@@ -230,20 +223,18 @@ int main(int argc, char* argv[]) {
     flavNow != flavours.end(); ++flavNow)  cout << setw(8)
     << flavNow->first << setw(16) << pythia.particleData.name(flavNow->first)
     << setw(8) << flavNow->second << endl;
-  cout << nChargedH << dndyChargedH << dndyRH << pTRH << xRH << mDiff
-       << decVtx << eta;
+  //cout << nChargedH << dndyChargedH << dndyRH << pTRH << xRH << mDiff << decVtx << eta;
 
   //write histograms to output file and close it
-  /*
   nChargedH->Write();
   dndyChargedH->Write();
   dndyRH->Write();
   pTRH->Write();
+  etaRH->Write();
   xRH->Write();
   mDiff->Write();
   decVtx->Write();
   delete outFile;
-  */
 
   // Done.
   return 0;

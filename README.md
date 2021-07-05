@@ -4,7 +4,7 @@ files to create gluino r-hadrons for stopped particles experiment
 ```
 tar xvfz pythia8306.tgz
 cd pythia8306
-./configure --lcg=x86_64-centos7-gcc9-opt --with-root #maybe the option here still need adjustment?
+./configure --with-root
 ```
 
 maybe 
