@@ -7,11 +7,12 @@ cd pythia8306
 ./configure --with-root
 ```
 
-maybe 
+do
 ```source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.22.00/x86_64-centos7-gcc48-opt/bin/thisroot.sh```
+
 or
 ```source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.22.00/x86_64-centos7-gcc48-opt/bin/thisroot.csh```
-depending on your shell?
+depending on your shell
 
 edit Makefile.inc to set:
 ```HEPMC2_USE=true```
