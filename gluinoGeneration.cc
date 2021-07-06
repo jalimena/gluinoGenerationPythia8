@@ -124,6 +124,9 @@ int main(int argc, char* argv[]) {
   TH1F *xRH = new TH1F("xRH", "p_RHadron / p_sparticle", 100, 0.9, 1.1);
   TH1F *mDiff = new TH1F("mDiff", "m(Rhadron) - m(sparticle)", 100, 0., 5.);
   TH1F *decVtx = new TH1F("decVtx", "R-hadron decay vertex (mm from origin)", 100, 0., 1000.);
+  TH1F *phiRH = new TH1F("phiRH", "Phi of R-hadrons", 100, -3.2, 3.2);
+  TH1F *betaRH = new TH1F("betaRH", "Beta of R-hadrons", 100, 0.,1.2 );
+ 
 
   // R-hadron flavour composition.
   map<int, int> flavours;
@@ -162,7 +165,10 @@ int main(int argc, char* argv[]) {
         dndyRH->Fill( event[i].y() );
         pTRH->Fill( event[i].pT() );
         etaRH->Fill( event[i].eta() );
-
+        phiRH->Fill( event[i].phi() );
+	double p2= event[i].pAbs2();
+	double m2= event[i].m()*event[i].m();
+	betaRH->Fill(sqrt(p2/(p2+m2)) );
         // Trace back to mother; compare momenta and masses.
         int iMother = i;
         while( event[iMother].statusAbs() > 100)
@@ -234,6 +240,9 @@ int main(int argc, char* argv[]) {
   xRH->Write();
   mDiff->Write();
   decVtx->Write();
+  phiRH->Write();
+  betaRH->Write();
+
   delete outFile;
 
   // Done.
