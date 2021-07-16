@@ -30,7 +30,7 @@ compile gluinoGeneration.cc with:
 
 run gluinoGeneration.cc with:
 ```./gluinoGeneration```
-you can do maybe:
-```nohup ./gluinoGeneration >& out &```
+for 5GeV gluino you can do maybe:
+```nohup ./gluinoGeneration 5 >& out &```
 
 it should just take a few seconds to generate 200 events

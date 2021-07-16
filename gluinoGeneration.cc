@@ -23,8 +23,8 @@ int main(int argc, char* argv[]) {
   // nGluino = 0, 1, 2 give stop pair, single gluino or gluino pair.
   // JA: yes, we want 2 gluinos per event
   int nGluino  = 2;
-  int nEvent   = 200;
-  int nAbort   = 3;
+  int nEvent   = 1000;
+  int nAbort   = 15;
   int nList    = 0;
   double eCM   = 13000.; //JA: changed to 13 TeV CME
 
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
   // This is based on the width being less than 0.2 GeV by default.
   //pythia.readString("SLHA:file = sps1aNarrowStopGluino.spc");
   // JA: put in HSCP gluino SLHA file with mass of 300 GeV
-  pythia.readString("SLHA:file = HSCP_gluino_300_SLHA.spc");
+  pythia.readString(std::string("SLHA:file = HSCP_gluino_")+argv[1]+"_SLHA.spc");
 
   // Further hacked file, to test R-parity violating gluino decay.
   //pythia.readString("SLHA:file = sps1aNarrowStopGluinoRPV.spc");
@@ -112,22 +112,39 @@ int main(int argc, char* argv[]) {
   TApplication theApp("hist", &argc, argv);
 
   // Create file on which histogram(s) can be saved.
-  TFile* outFile = new TFile("hist.root", "RECREATE");
+  std::ostringstream fileNameStream("hist");
+  fileNameStream << "hist"<< argv[1] << ".root";
+  std::string fileName=fileNameStream.str();
+  TFile* outFile = new TFile(fileName.c_str(), "RECREATE");
+
+  //Create bin widths for log scale
+  const int nbins=25;
+  Double_t xbins[nbins+1];
+  double dx = 3.5/nbins;
+  for (int i=0;i<=nbins;i++) {
+    xbins[i] = exp(log(10)*i*dx);
+  }
 
   // Histograms.
   // JA: Jasmine, you can add more histograms here
   TH1F *nChargedH = new TH1F("nChargedH", "charged multiplicity", 100, -0.5, 799.5);
   TH1F *dndyChargedH = new TH1F("dndyChargedH", "dn/dy charged", 100, -10., 10.);
   TH1F *dndyRH = new TH1F("dndyRH", "dn/dy R-hadrons", 100, -5., 5.);
-  TH1F *pTRH = new TH1F("pTRH", "pT of R-hadrons", 100, 0., 1000.);
-  TH1F *etaRH = new TH1F("etaRH", "eta of R-hadrons", 100, -5, 5);
+  TH1F *pTRH = new TH1F("pTRH", "pT of R-hadrons",nbins,xbins);//log scale
+  TH1F *etaRH = new TH1F("etaRH", "eta of R-hadrons", 50, -5, 5);
   TH1F *xRH = new TH1F("xRH", "p_RHadron / p_sparticle", 100, 0.9, 1.1);
   TH1F *mDiff = new TH1F("mDiff", "m(Rhadron) - m(sparticle)", 100, 0., 5.);
   TH1F *decVtx = new TH1F("decVtx", "R-hadron decay vertex (mm from origin)", 100, 0., 1000.);
-  TH1F *phiRH = new TH1F("phiRH", "Phi of R-hadrons", 100, -3.2, 3.2);
-  TH1F *betaRH = new TH1F("betaRH", "Beta of R-hadrons", 100, 0.,1.2 );
- 
+  TH1F *phiRH = new TH1F("phiRH", "Phi of R-hadrons", 50, -3.2, 3.2);
+  TH1F *betaRH = new TH1F("betaRH", "Beta of R-hadrons", 25, 0.,1.0 );
+  TH1F *acceptedPTRH = new TH1F("acceptedPTRH", "pT of R-hadrons that hit detector",nbins,xbins);//log scale
+  TH1F *acceptedBetaRH = new TH1F("acceptedBetaRH", "Beta of R-hadrons that hit detector", 25, 0.,1.0 );
 
+  double detectorSize=2; //side length of detector
+  double detectorDistance=3; //Distance of detector from beamline
+  double acceptanceAngle=atan(detectorSize/(2*detectorDistance)); //max phi for a particle to hit detector
+  double pi = 3.14159265358979323;
+  double acceptanceEta=log(tan((pi-acceptanceAngle)/2)); //max eta for a particle to hit detector
   // R-hadron flavour composition.
   map<int, int> flavours;
 
@@ -137,11 +154,11 @@ int main(int argc, char* argv[]) {
 
     // Generate events. Quit if failure.
     if (!pythia.next()) {
+      cout<< "Event aborted\n";
       if (++iAbort < nAbort) continue;
       cout << " Event generation aborted prematurely, owing to error!\n";
       break;
     }
-
     // Loop over final charged particles in the event.
     // The R-hadrons may not yet have decayed here.
     int nCharged = 0;
@@ -166,9 +183,15 @@ int main(int argc, char* argv[]) {
         pTRH->Fill( event[i].pT() );
         etaRH->Fill( event[i].eta() );
         phiRH->Fill( event[i].phi() );
-	double p2= event[i].pAbs2();
-	double m2= event[i].m()*event[i].m();
+	double p2= event[i].pAbs2();//momentum squared
+	double m2= event[i].m()*event[i].m();//mass squared
 	betaRH->Fill(sqrt(p2/(p2+m2)) );
+	//Check if event would hit detector
+	if(event[i].phi()<acceptanceAngle && event[i].phi()>-acceptanceAngle && event[i].eta()<acceptanceEta && event[i].eta()>-acceptanceEta){
+	  acceptedPTRH->Fill( event[i].pT() );
+          acceptedBetaRH->Fill(sqrt(p2/(p2+m2)) );
+      	}
+
         // Trace back to mother; compare momenta and masses.
         int iMother = i;
         while( event[iMother].statusAbs() > 100)
@@ -220,7 +243,11 @@ int main(int argc, char* argv[]) {
 
   // End of event loop.
   }
-
+  //calculate efficiency histograms
+  TH1* efficiencyBetaRH=(TH1*)acceptedBetaRH->Clone("efficiencyBetaRH");
+  efficiencyBetaRH->Divide(acceptedBetaRH,betaRH);
+  TH1* efficiencyPTRH=(TH1*)acceptedPTRH->Clone("efficiencyPTRH");
+  efficiencyPTRH->Divide(acceptedPTRH,pTRH);
   // Final statistics, flavour composition and histogram output.
   pythia.stat();
   cout << "\n Composition of produced R-hadrons \n    code            "
@@ -230,7 +257,7 @@ int main(int argc, char* argv[]) {
     << flavNow->first << setw(16) << pythia.particleData.name(flavNow->first)
     << setw(8) << flavNow->second << endl;
   //cout << nChargedH << dndyChargedH << dndyRH << pTRH << xRH << mDiff << decVtx << eta;
-
+  
   //write histograms to output file and close it
   nChargedH->Write();
   dndyChargedH->Write();
@@ -242,7 +269,11 @@ int main(int argc, char* argv[]) {
   decVtx->Write();
   phiRH->Write();
   betaRH->Write();
-
+  acceptedBetaRH->Write();
+  acceptedPTRH->Write();
+  efficiencyBetaRH->Write();
+  efficiencyPTRH->Write();
+  
   delete outFile;
 
   // Done.
