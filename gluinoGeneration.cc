@@ -14,7 +14,8 @@
 #include "TH1.h"
 #include "TFile.h"
 #include "TApplication.h" // ROOT, for interactive graphics.
-
+#include "TEfficiency.h"
+#include "TCanvas.h"
 using namespace Pythia8;
 
 int main(int argc, char* argv[]) {
@@ -24,7 +25,7 @@ int main(int argc, char* argv[]) {
   // JA: yes, we want 2 gluinos per event
   int nGluino  = 2;
   int nEvent   = 1000;
-  int nAbort   = 15;
+  int nAbort   = 10;
   int nList    = 0;
   double eCM   = 13000.; //JA: changed to 13 TeV CME
 
@@ -128,23 +129,35 @@ int main(int argc, char* argv[]) {
   // Histograms.
   // JA: Jasmine, you can add more histograms here
   TH1F *nChargedH = new TH1F("nChargedH", "charged multiplicity", 100, -0.5, 799.5);
+  TH1F *chargeRH = new TH1F("chargeRH", "charge of R-hadrons", 61, -10, 10);
   TH1F *dndyChargedH = new TH1F("dndyChargedH", "dn/dy charged", 100, -10., 10.);
   TH1F *dndyRH = new TH1F("dndyRH", "dn/dy R-hadrons", 100, -5., 5.);
   TH1F *pTRH = new TH1F("pTRH", "pT of R-hadrons",nbins,xbins);//log scale
   TH1F *etaRH = new TH1F("etaRH", "eta of R-hadrons", 50, -5, 5);
+  TH1F *thetaRH = new TH1F("thetaRH", "theta of R-hadrons", 50, -0, 3.2);
   TH1F *xRH = new TH1F("xRH", "p_RHadron / p_sparticle", 100, 0.9, 1.1);
   TH1F *mDiff = new TH1F("mDiff", "m(Rhadron) - m(sparticle)", 100, 0., 5.);
   TH1F *decVtx = new TH1F("decVtx", "R-hadron decay vertex (mm from origin)", 100, 0., 1000.);
   TH1F *phiRH = new TH1F("phiRH", "Phi of R-hadrons", 50, -3.2, 3.2);
+  TH1F *phiPosRH = new TH1F("phiPosRH", "Phi (position) of R-hadrons", 20, -5, 5);
+  TH1F *phiVelRH = new TH1F("phiVelRH", "Phi (velocity) of R-hadrons", 20, -5, 5);
   TH1F *betaRH = new TH1F("betaRH", "Beta of R-hadrons", 25, 0.,1.0 );
   TH1F *acceptedPTRH = new TH1F("acceptedPTRH", "pT of R-hadrons that hit detector",nbins,xbins);//log scale
   TH1F *acceptedBetaRH = new TH1F("acceptedBetaRH", "Beta of R-hadrons that hit detector", 25, 0.,1.0 );
+  TH1F *distanceRH = new TH1F("distanceRH", "Distance R-hadron travels through detector", 30, 0.,3 );
+  
 
+  double magneticField=4;
+  double fieldRadius=2.95; //radius of magetic field
+  double fieldLength=6.45;
   double detectorSize=2; //side length of detector
-  double detectorDistance=3; //Distance of detector from beamline
+  double detectorDistance=7.38; //Distance of detector from beamline
   double acceptanceAngle=atan(detectorSize/(2*detectorDistance)); //max phi for a particle to hit detector
   double pi = 3.14159265358979323;
-  double acceptanceEta=log(tan((pi-acceptanceAngle)/2)); //max eta for a particle to hit detector
+  //  double maxAcceptanceEta=log(tan((pi/2+acceptanceAngle)/2)); //max eta for a particle to hit detector
+  //  double minAcceptanceEta=log(tan((pi/2-acceptanceAngle)/2)); //min eta for a particle to hit detector
+  //  double maxAcceptanceTheta=pi/2+acceptanceAngle; //max theta for a particle to hit detector
+  //  double minAcceptanceTheta=pi/2-acceptanceAngle; //min theta for a particle to hit detector
   // R-hadron flavour composition.
   map<int, int> flavours;
 
@@ -156,18 +169,19 @@ int main(int argc, char* argv[]) {
     if (!pythia.next()) {
       cout<< "Event aborted\n";
       if (++iAbort < nAbort) continue;
-      cout << " Event generation aborted prematurely, owing to error!\n";
+      //      cout << " Event generation aborted prematurely, owing to error!\n";
       break;
     }
     // Loop over final charged particles in the event.
     // The R-hadrons may not yet have decayed here.
+
     int nCharged = 0;
     Vec4 pSum;
     for (int i = 0; i < event.size(); ++i) {
       if (event[i].isFinal()) {
         pSum += event[i].p();
         if (event[i].isCharged()) {
-          ++nCharged;
+	  ++nCharged;
           dndyChargedH->Fill( event[i].y() );
         }
       }
@@ -181,15 +195,58 @@ int main(int argc, char* argv[]) {
         ++flavours[ event[i].id() ];
         dndyRH->Fill( event[i].y() );
         pTRH->Fill( event[i].pT() );
-        etaRH->Fill( event[i].eta() );
-        phiRH->Fill( event[i].phi() );
+	double eta = event[i].eta();
+	etaRH->Fill(eta);
+	double theta = 2*atan(exp(-eta));
+	thetaRH->Fill(theta);
+        double phi=event[i].phi();
+	phiRH->Fill(phi );
+	double charge = event[i].charge();
+	chargeRH->Fill(charge);
 	double p2= event[i].pAbs2();//momentum squared
 	double m2= event[i].m()*event[i].m();//mass squared
-	betaRH->Fill(sqrt(p2/(p2+m2)) );
+	double beta=sqrt(p2/(p2+m2));
+	betaRH->Fill(beta);
+	
+	double phiPos;
+	double phiVel;
+	double thetaVel=theta;//theta of velocity vector unchanged by magnetic field
+	double lZMag;//z distance travelled in magnetic field
+	double betaT=event[i].pT()/sqrt(p2+m2);//transverse velocity
+	double betaZ=sqrt(beta*beta-betaT*betaT);//Z velocity
+	
+	//For charged events calculate new velocity and position angles after magnetic field
+	if(event[i].isCharged()){
+	  double curvatureRadius=event[i].m()*betaT*1000000000/(299792458*abs(charge)*magneticField);// radius of curvature due to magenetic field
+	  double deltaPhiVel=acos(1-fieldRadius*fieldRadius/(2*curvatureRadius*curvatureRadius));// change in angle due to magnetic field
+	  phiVel=phi+(charge/abs(charge))*deltaPhiVel;//phi of velocity vector after magnetic field
+	  double deltaPhiPos=asin(detectorSize/detectorDistance*sin(3.1415926535-deltaPhiVel/2));
+	  phiPos=phi+(charge/abs(charge))*(deltaPhiVel-deltaPhiPos);//phi of position vector when particle reached detector
+	  //	  double lT=curvatureRadius*deltaPhiVel; //distance travelled in transverse direction in magnetic field
+	  lZMag=curvatureRadius*deltaPhiVel*betaZ/betaT; //distance travelled in z direction in magnetic field
+	}
+	else{
+	  phiPos=phi;//if particle not charged angles are not affected by magnetic field
+	  phiVel=phi;
+	  lZMag=fieldRadius*betaZ/betaT;
+	}
+	phiPosRH->Fill(phiPos);
+	phiVelRH->Fill(phiVel);
+	if(thetaVel>pi/2){thetaVel=-thetaVel+pi;}
+	double lZ=(detectorDistance-fieldRadius)/tan(thetaVel);//distance travelled in Z direction outside magnetic field
 	//Check if event would hit detector
-	if(event[i].phi()<acceptanceAngle && event[i].phi()>-acceptanceAngle && event[i].eta()<acceptanceEta && event[i].eta()>-acceptanceEta){
-	  acceptedPTRH->Fill( event[i].pT() );
-          acceptedBetaRH->Fill(sqrt(p2/(p2+m2)) );
+	if(lZMag<fieldLength){ //particle leaves magnetic field through curved face
+	  if(phiPos<acceptanceAngle && phiPos>-acceptanceAngle && lZ+lZMag<detectorSize/2 && lZ+lZMag>-detectorSize/2){ //particle hits detector 
+	    acceptedPTRH->Fill( event[i].pT() );
+	    acceptedBetaRH->Fill(sqrt(p2/(p2+m2)) );
+	    //Find distance travelled through detector
+	    double distX=(detectorSize/2-detectorDistance*sin(abs(phiPos)));
+	    double distZ=(detectorSize/2-abs(lZ)-abs(lZMag));
+	    double distY=min(distZ*tan(thetaVel),distX/tan(abs(phiVel)));
+	    distY=min(distY,detectorSize);
+	    double dist=sqrt(distZ*distZ+distY*distY+distX*distX);
+	    distanceRH->Fill(dist);
+	  }
       	}
 
         // Trace back to mother; compare momenta and masses.
@@ -244,10 +301,21 @@ int main(int argc, char* argv[]) {
   // End of event loop.
   }
   //calculate efficiency histograms
-  TH1* efficiencyBetaRH=(TH1*)acceptedBetaRH->Clone("efficiencyBetaRH");
-  efficiencyBetaRH->Divide(acceptedBetaRH,betaRH);
-  TH1* efficiencyPTRH=(TH1*)acceptedPTRH->Clone("efficiencyPTRH");
-  efficiencyPTRH->Divide(acceptedPTRH,pTRH);
+
+  TEfficiency* pTEff = 0;
+  if(TEfficiency::CheckConsistency(*acceptedPTRH,*pTRH))
+    {
+      pTEff = new TEfficiency(*acceptedPTRH,*pTRH);
+      pTEff->Draw("A E0");
+      pTEff->Write();
+    }
+  TEfficiency* betaEff = 0;
+  if(TEfficiency::CheckConsistency(*acceptedBetaRH,*betaRH))
+    {
+      betaEff = new TEfficiency(*acceptedBetaRH,*betaRH);
+      betaEff->Write();
+    }
+
   // Final statistics, flavour composition and histogram output.
   pythia.stat();
   cout << "\n Composition of produced R-hadrons \n    code            "
@@ -256,23 +324,25 @@ int main(int argc, char* argv[]) {
     flavNow != flavours.end(); ++flavNow)  cout << setw(8)
     << flavNow->first << setw(16) << pythia.particleData.name(flavNow->first)
     << setw(8) << flavNow->second << endl;
-  //cout << nChargedH << dndyChargedH << dndyRH << pTRH << xRH << mDiff << decVtx << eta;
   
   //write histograms to output file and close it
   nChargedH->Write();
   dndyChargedH->Write();
+  chargeRH->Write();
   dndyRH->Write();
   pTRH->Write();
   etaRH->Write();
+  thetaRH->Write();
   xRH->Write();
   mDiff->Write();
   decVtx->Write();
   phiRH->Write();
+  phiPosRH->Write();
+  phiVelRH->Write();
   betaRH->Write();
   acceptedBetaRH->Write();
   acceptedPTRH->Write();
-  efficiencyBetaRH->Write();
-  efficiencyPTRH->Write();
+  distanceRH->Write();
   
   delete outFile;
 
