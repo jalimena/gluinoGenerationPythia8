@@ -30,7 +30,7 @@ compile gluinoGeneration.cc with:
 
 run gluinoGeneration.cc with:
 ```./gluinoGeneration```
-for 5GeV gluino you can do maybe:
-```nohup ./gluinoGeneration 5 >& out &```
+1st argument is gluino mass [GeV], 2nd is the width of the detector [m], and 3rd is detector position (0 for above collision point and 1 for diagonal to collision point). e.g. for 5GeV gluino, 2x2m detector above the collision point:
+```nohup ./gluinoGeneration 5 2 0 >& out &```
 
 it should just take a few seconds to generate 200 events
