@@ -34,3 +34,8 @@ run gluinoGeneration.cc with:
 ```nohup ./gluinoGeneration 5 2 0 >& out &```
 
 it should just take a few seconds to generate 200 events
+
+To run plotHist.cc open ROOT. do:
+```.L plotHist.cc```
+```.x plotHist.cc("2","0")```
+where the 1st argument is the width of the detector [m], and the 2nd is detector postion
