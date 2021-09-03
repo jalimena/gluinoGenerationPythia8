@@ -4,200 +4,226 @@
 #include "TH1.h"
 #include "TFile.h"
 #include "TCanvas.h"
-int plotHist() {
+#include "TEfficiency.h"
+#include "tdrstyle.C"
+int plotHist(char* size, char* position) {
 
-  auto canvas1=new TCanvas("canvas1","canvas1");
-  TH1F * betaRH;
-  TH1::AddDirectory(kFALSE);
-  gStyle->SetPalette(kRainBow);
-  auto* legend = new TLegend(0.1,0.99,0.4,0.5);
-  gStyle->SetOptStat(0);
-  legend->AddEntry((TObject*)0,"gluino mass","");
-  for(int i=5; i<1281; i=i*2){
-    TFile inFile(std::string("hist")+i+".root");
-    inFile.GetObject("betaRH",betaRH);
-    betaRH->Draw("SAME PLC");
-    legend->AddEntry(betaRH,i+std::string(" GeV"),"l");
+  setTDRStyle(); 
+
+  //plot beta, accepted beta, p, acceptred p and angle distributions
+  //acceptedBeta and acceptedP are total number of accepted particles, not fraction that are accepted 
+  const char* name[7]={"betaRH","pRH","acceptedBetaRH","acceptedPRH","phiRH","thetaRH","etaRH"};//used for filenames
+  const char* hist[7]={"betaRH","pRH","acceptedBetaRH","acceptedPRH","phiRH","thetaRH","etaRH"};//used to declare TH1F
+  const char* axis[7]={"#beta","Momentum [GeV]","#beta","Momentum [GeV]","#phi","#theta","#eta"};
+  int logScale[7] = {0,2,0,2,0,0,0};//1 for logy scale, 2 for logx scale, 3 for logx and logy, 0 for neither
+  int mass[10]={2560,1280,640,320,160,80,40,20,10,5};
+  //set colour and style for each mass point
+  Color_t fillColour[10] = {kRed,kOrange+1,kOrange,kSpring-9,kGreen,kCyan,kCyan-2,kBlue,kViolet-5,kMagenta};
+  Color_t lineColour[10] = {kRed+1,kOrange+2,kOrange-3,kSpring-8,kGreen+1,kCyan+1,kCyan-2,kBlue,kViolet-5,kMagenta};
+  Style_t fillStyle[10] = {3150,3151,3152,3153,3154,3156,3157,3158,3159,3159};
+  double max[7] = {pow(10,5),55000,2700,300,10400,35000,13000};
+
+  for(int i=0; i<7; i++){//for each property being plotted
+    auto canvas=new TCanvas("canvas","canvas");
+    TH1F* hist[i];
+    TH1::AddDirectory(kFALSE);
+    auto* legend = new TLegend(0.75,0.94,0.9,0.65);
+    gStyle->SetOptStat(0);
+    legend->AddEntry((TObject*)0,"gluino mass","");
+    for(int j=9; j>-1; j-=1){//for each mass point
+      TFile inFile(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
+      inFile.GetObject(name[i],hist[i]);//get saved histogram
+      if(j==9){
+	hist[i]->Draw("");
+	hist[i]->SetMaximum(max[i]);
+	hist[i]->SetTitle((std::string(";")+axis[i]+";Counts").c_str());
+      }
+      else{hist[i]->Draw("SAME");}//plot all masses on the same canvas
+      hist[i]->SetLineColor(lineColour[j]);
+      legend->AddEntry(hist[i],mass[j]+std::string(" GeV"),"l");
+    }
+    //add log scale if needed
+    if(logScale[i]==1){gPad->SetLogy();}
+    else if(logScale[i]==2){gPad->SetLogx();}
+    else if(logScale[i]==3){gPad->SetLogy();gPad->SetLogx();}
+    legend->Draw();
+    legend->SetBorderSize(0);
+    if(i==5){//draw angular acceptance on theta plot
+      double pi=3.14159265358979;
+      double thetaAcceptance0low=pi/2+atan(1/7.38);
+      double thetaAcceptance0up=pi/2-atan(1/7.38);
+      double thetaAcceptance1low=atan(2/10.91);
+      double thetaAcceptance1up=atan(4/10.91);
+      TH1F * thetaAcceptanceHist0 = new TH1F("thetaAcceptanceHist0","thetaAcceptanceHist0",1,thetaAcceptance0low,thetaAcceptance0up);
+      thetaAcceptanceHist0->SetBinContent(1,36000);
+      thetaAcceptanceHist0->SetFillColor(kGray);
+      thetaAcceptanceHist0->SetFillStyle(3154);
+      thetaAcceptanceHist0->Draw("B SAME");
+      TH1F * thetaAcceptanceHist1 = new TH1F("thetaAcceptanceHist1","thetaAcceptanceHist1",1,thetaAcceptance1low,thetaAcceptance1up);
+      thetaAcceptanceHist1->SetBinContent(1,36000);
+      thetaAcceptanceHist1->Draw("B SAME");
+      thetaAcceptanceHist1->SetFillColor(kGray);
+      thetaAcceptanceHist1->SetFillStyle(3154);
+      TPaveText *pt1 = new TPaveText(.21,.8,.33,.7,"brNDC");
+      pt1->AddText("Absorber");
+      pt1->AddText("position 1");
+      pt1->AddText("acceptance");
+      pt1->Draw();
+      pt1->SetBorderSize(0);
+      pt1->SetFillStyle(0);
+      TPaveText *pt0 = new TPaveText(.54,.8,.66,.7,"brNDC");
+      pt0->AddText("Absorber");
+      pt0->AddText("position 0");
+      pt0->AddText("acceptance");
+      pt0->Draw();
+      pt0->SetBorderSize(0);
+      pt0->SetFillStyle(0);
+    }
+    canvas->Print((name[i]+std::string(size)+"_"+position+".pdf").c_str());
   }
-  TFile inFile("hist2048.root");
-  inFile.GetObject("betaRH",betaRH);
-  betaRH->Draw("SAME PLC");
-  legend->AddEntry(betaRH,"2048 GeV","l");
-  gPad->SetLogy();
-  betaRH->GetXaxis()->SetTitle("beta");
-  betaRH->GetYaxis()->SetTitle("counts");
-  legend->Draw();
-  canvas1->Print("betaRH.pdf");
+
+  //angular acceptance plots (fraction of particles that are accepted)
+  auto canvas1=new TCanvas("canvas1","canvas1");
+  TEfficiency * betaAcceptance;
+  TH1::AddDirectory(kFALSE);
+  auto *legend1 = new TLegend(0.7,0.94,0.85,0.75);
+  gStyle->SetOptStat(0);
+  legend1->AddEntry((TObject*)0,"gluino mass","");
+  for(int j=1; j<10; j+=4){
+    TFile infile1(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
+    infile1.GetObject("betaRH_clone",betaAcceptance);
+    if(j==1){
+      betaAcceptance->Draw("AC E3");
+      betaAcceptance->SetTitle(";#beta;Angular acceptance");
+      //change graph limits
+      gPad->Update();
+      auto graph=betaAcceptance->GetPaintedGraph();
+      graph->SetMinimum(0);
+      graph->SetMaximum(0.04);
+      TAxis *xaxis = graph->GetXaxis();
+      xaxis->SetLimits(0.1,1.);
+      gPad->Update();
+    }
+    else{betaAcceptance->Draw("C SAME E3");}
+    legend1->AddEntry(betaAcceptance,mass[j]+std::string(" GeV"),"f");
+    betaAcceptance->SetFillStyle(fillStyle[j]);
+    betaAcceptance->SetFillColor(fillColour[j]);
+    betaAcceptance->SetLineColor(lineColour[j]);
+  }
+  legend1->Draw();
+  legend1->SetBorderSize(0);
+  //write absorber position and size
+  TPaveText *pt0 = new TPaveText(.4,.93,.65,.85,"brNDC");
+  pt0->AddText((std::string("Absorber position ")+position).c_str());
+  pt0->AddText((size+std::string("m x ")+size+"m x 2m").c_str());
+  pt0->Draw();
+  pt0->SetBorderSize(0);
+  pt0->SetFillStyle(0);
+  canvas1->Print((std::string("betaAcceptance_")+size+"_"+position+".pdf").c_str());
+
 
   auto canvas2=new TCanvas("canvas2","canvas2");
-  TH1F * phiRH;
+  TEfficiency * pAcceptance; 
   TH1::AddDirectory(kFALSE);
-  gStyle->SetPalette(kRainBow);
-  auto* legend2 = new TLegend(0.8,0.99,0.99,0.5);
+  auto* legend2 = new TLegend(0.8,0.9,0.99,0.5);
   gStyle->SetOptStat(0);
   legend2->AddEntry((TObject*)0,"gluino mass","");
-  for(int i=5; i<1281; i=i*2){
-    TFile inFile(std::string("hist")+i+".root");
-    inFile.GetObject("phiRH",phiRH);
-    phiRH->Draw("SAME PLC");
-    legend2->AddEntry(phiRH,i+std::string(" GeV"),"l");
+  for(int j=1; j<10; j+=4){
+    TFile infile2(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
+    infile2.GetObject("pRH_clone",pAcceptance);
+    if(j==1){
+      pAcceptance->Draw("AC E3");
+      pAcceptance->SetTitle(";Momentum [GeV];Fraction of R-hadrons that hit detector");
+      //change graph limits
+      gPad->Update();
+      auto graph=betaAcceptance->GetPaintedGraph();
+      graph->SetMinimum(0);
+      graph->SetMaximum(0.04);
+      TAxis *xaxis = graph->GetXaxis();
+      xaxis->SetLimits(0.1,1000.);
+      gPad->Update();
+    }
+    pAcceptance->Draw("C SAME E3");
+    legend2->AddEntry(pAcceptance,mass[j]+std::string(" GeV"),"f");
+    pAcceptance->SetFillStyle(fillStyle[j]);
+    pAcceptance->SetFillColor(fillColour[j]);
+    pAcceptance->SetLineColor(lineColour[j]);
   }
-  TFile inFile2("hist2048.root");
-  inFile2.GetObject("phiRH",phiRH);
-  phiRH->Draw("SAME PLC");
-  legend2->AddEntry(phiRH,"2048 GeV","l");
-  phiRH->GetXaxis()->SetTitle("phi [rad]");
-  phiRH->GetYaxis()->SetTitle("counts");  
   legend2->Draw();
-  canvas2->Print("phiRH.pdf");
+  gPad->SetLogy();
+  gPad->SetLogx();
+  canvas2->Print((std::string("pAcceptance_")+size+"_"+position+".pdf").c_str());
 
+  //plot absorption effienciency convolved with kinematic acceptance
   auto canvas3=new TCanvas("canvas3","canvas3");
-  TH1F * pTRH;
+  TGraphAsymmErrors * pEfficiency; 
   TH1::AddDirectory(kFALSE);
-  gStyle->SetPalette(kRainBow);
-  auto* legend3 = new TLegend(0.8,0.99,0.99,0.5);
+  auto* legend3 = new TLegend(0.2,0.94,0.35,0.6);
   gStyle->SetOptStat(0);
   legend3->AddEntry((TObject*)0,"gluino mass","");
-  for(int i=5; i<1281; i=i*2){
-    TFile inFile(std::string("hist")+i+".root");
-    inFile.GetObject("pTRH",pTRH);
-    pTRH->Draw("SAME PLC");
-    legend3->AddEntry(pTRH,i+std::string(" GeV"),"l");
+  for(int j=1; j<10; j+=2){//only plot every other mass point so eaier to see 
+    TFile infile3(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
+    infile3.GetObject("Graph;4",pEfficiency);
+    if(j==1){  pEfficiency->Draw("AL3");
+      pEfficiency->SetMaximum(0.02);//needs changing for different absorber positions/sizes
+      pEfficiency->SetMinimum(pow(10,-7));//needs changing for different absorber positions/sizes
+      pEfficiency->SetTitle(";Momentum [GeV];Absorption Efficiency");
+      TAxis *xaxis = pEfficiency->GetXaxis();
+      xaxis->SetLimits(3.,900.); 
+    }
+    else{pEfficiency->Draw("L3 SAME");}
+    legend3->AddEntry(pEfficiency,mass[j]+std::string(" GeV"),"f");
+    pEfficiency->SetFillStyle(fillStyle[j]);
+    pEfficiency->SetFillColor(fillColour[j]);
+    pEfficiency->SetLineColor(lineColour[j]);
   }
-  TFile inFile3("hist2048.root");
-  inFile3.GetObject("pTRH",pTRH);
-  pTRH->Draw("SAME PLC");
-  legend3->AddEntry(pTRH,"2048 GeV","l");
-  gPad->SetLogy();
-  gPad->SetLogx();
-  pTRH->GetXaxis()->SetTitle("Transverse momentum [GeV]");
-  pTRH->GetYaxis()->SetTitle("counts");
+  //write detector size and position
+  TPaveText *pt1 = new TPaveText(.4,.93,.65,.85,"brNDC");
+  pt1->AddText((std::string("Detector position ")+position).c_str());
+  pt1->AddText((size+std::string("m x ")+size+"m x 2m").c_str());
+  pt1->Draw();
+  pt1->SetBorderSize(0);
+  pt1->SetFillStyle(0);
   legend3->Draw();
-  canvas3->Print("pTRH.pdf");
+  legend3->SetBorderSize(0);
+  gPad->SetLogx();
+  canvas3->Print((std::string("pEfficiency_")+size+"_"+position+".pdf").c_str());
 
   auto canvas4=new TCanvas("canvas4","canvas4");
-  TH1F * etaRH;
+  TGraphAsymmErrors * betaEfficiency; 
   TH1::AddDirectory(kFALSE);
-  gStyle->SetPalette(kRainBow);
-  auto* legend4 = new TLegend(0.8,0.99,0.99,0.5);
+  auto *legend4 = new TLegend(0.8,0.94,0.95,0.6);//use for position 0
+  //auto *legend4 = new TLegend(0.2,0.94,0.35,0.6);//use for position 1
   gStyle->SetOptStat(0);
   legend4->AddEntry((TObject*)0,"gluino mass","");
-   for(int i=5; i<1281; i=i*2){
-    TFile inFile(std::string("hist")+i+".root");
-    inFile.GetObject("etaRH",etaRH);
-    etaRH->Draw("SAME PLC");
-    etaRH->SetMaximum(22);
-    legend4->AddEntry(etaRH,i+std::string(" GeV"),"l");
+  for(int j=0; j<10; j+=1){
+    TFile infile4(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
+    infile4.GetObject("Graph;3",betaEfficiency);
+    if(j==0){
+      betaEfficiency->Draw("AL3");
+      betaEfficiency->SetMaximum(0.002);
+      betaEfficiency->SetMinimum(0);
+      betaEfficiency->SetTitle(";#beta;Absorption efficiency x acceptance");
+      TAxis *xaxis0 = betaEfficiency->GetXaxis();
+      xaxis0->SetLimits(0.1,1.);
+    }
+    
+    else{betaEfficiency->Draw("L3 SAME");}
+    legend4->AddEntry(betaEfficiency,mass[j]+std::string(" GeV"),"f");
+    betaEfficiency->SetFillStyle(fillStyle[j]);
+    betaEfficiency->SetFillColor(fillColour[j]);
+    betaEfficiency->SetLineColor(lineColour[j]);
   }
-  TFile inFile4("hist2048.root");
-  inFile4.GetObject("etaRH",etaRH);
-  etaRH->Draw("SAME PLC");
-  legend4->AddEntry(etaRH,"2048 GeV","l");
-  etaRH->GetXaxis()->SetTitle("eta");
-  etaRH->GetYaxis()->SetTitle("counts");
+  //write detector position and size
+  TPaveText *pt = new TPaveText(.4,.93,.65,.85,"brNDC");
+  pt->AddText((std::string("Absorber position ")+position).c_str());
+  pt->AddText((size+std::string("m x ")+size+"m x 2m").c_str());
+  pt->Draw();
+  pt->SetBorderSize(0);
+  pt->SetFillStyle(0);
   legend4->Draw();
-  canvas4->Print("etaRH.pdf");
-  
-
-  auto canvas5=new TCanvas("canvas5","canvas5");
-  TH1F * acceptedPTRH;
-  TH1::AddDirectory(kFALSE);
-  gStyle->SetPalette(kRainBow);
-  auto* legend5 = new TLegend(0.8,0.9,0.99,0.5);
-  gStyle->SetOptStat(0);
-  legend5->AddEntry((TObject*)0,"gluino mass","");
-  for(int i=5; i<1281; i=i*2){
-    TFile inFile(std::string("hist")+i+".root");
-    inFile.GetObject("acceptedPTRH",acceptedPTRH);
-    acceptedPTRH->Draw("SAME PLC");
-    acceptedPTRH->GetXaxis()->SetTitle("Transverse momentum [GeV]");
-    acceptedPTRH->GetYaxis()->SetTitle("counts");
-    acceptedPTRH->SetMaximum(45);
-    legend5->AddEntry(acceptedPTRH,i+std::string(" GeV"),"l");
-  }
-  TFile inFile5("hist2048.root");
-  inFile5.GetObject("acceptedPTRH",acceptedPTRH);
-  acceptedPTRH->Draw("SAME PLC");
-  legend5->AddEntry(acceptedPTRH,"2048 GeV","l"); 
-  gPad->SetLogx();
-  legend5->Draw();
-  canvas5->Print("acceptedPTRH.pdf");
-
-  auto canvas6=new TCanvas("canvas6","canvas6");
-  TH1F * acceptedBetaRH;
-  TH1::AddDirectory(kFALSE);
-  gStyle->SetPalette(kRainBow);
-  auto* legend6 = new TLegend(0.8,0.9,0.99,0.5);
-  gStyle->SetOptStat(0);
-  legend6->AddEntry((TObject*)0,"gluino mass","");
-  for(int i=5; i<1281; i=i*2){
-    TFile inFile(std::string("hist")+i+".root");
-    inFile.GetObject("acceptedBetaRH",acceptedBetaRH);
-    acceptedBetaRH->Draw("SAME PLC");
-    acceptedBetaRH->GetXaxis()->SetTitle("beta");
-    acceptedBetaRH->GetYaxis()->SetTitle("counts");
-    acceptedBetaRH->SetMaximum(20);
-    legend6->AddEntry(acceptedBetaRH,i+std::string(" GeV"),"l");
-  }
-  TFile inFile6("hist2048.root");
-  inFile6.GetObject("acceptedBetaRH",acceptedBetaRH);
-  acceptedBetaRH->Draw("SAME PLC");
-  legend6->AddEntry(acceptedBetaRH,"2048 GeV","l");
-  legend6->Draw();
-  canvas6->Print("acceptedBetaRH.pdf");
-
-  auto canvas7=new TCanvas("canvas7","canvas7");
-  TH1F * efficiencyPTRH;
-  TH1::AddDirectory(kFALSE);
-  gStyle->SetPalette(kRainBow);
-  auto* legend7 = new TLegend(0.8,0.9,0.99,0.5);
-  gStyle->SetOptStat(0);
-  legend7->AddEntry((TObject*)0,"gluino mass","");
-  for(int i=5; i<641; i=i*4){
-    TFile inFile(std::string("hist")+i+".root");
-    inFile.GetObject("efficiencyPTRH",efficiencyPTRH);
-    efficiencyPTRH->Draw("SAME PLC");
-    efficiencyPTRH->Rebin();    
-    efficiencyPTRH->GetXaxis()->SetTitle("Transverse momentum [GeV]");
-    efficiencyPTRH->GetYaxis()->SetTitle("Fraction of R-hadrons that hit detector");
-    efficiencyPTRH->SetMaximum(1);
-    legend7->AddEntry(efficiencyPTRH,i+std::string(" GeV"),"l");
-  }
-  TFile inFile7("hist2048.root");
-  inFile7.GetObject("efficiencyPTRH",efficiencyPTRH);
-  efficiencyPTRH->Draw("SAME PLC");
-  legend7->AddEntry(efficiencyPTRH,"2048 GeV","l"); 
-  efficiencyPTRH->Rebin();    
-  gPad->SetLogx();
-  gPad->SetLogy();
-  legend7->Draw();
-  canvas7->Print("efficiencyPTRH.pdf");
-
-  auto canvas8=new TCanvas("canvas8","canvas8");
-  TH1F * efficiencyBetaRH;
-  TH1::AddDirectory(kFALSE);
-  gStyle->SetPalette(kRainBow);
-  auto* legend8 = new TLegend(0.8,0.9,0.99,0.5);
-  gStyle->SetOptStat(0);
-  legend8->AddEntry((TObject*)0,"gluino mass","");
-  for(int i=5; i<641; i=i*4){
-    TFile inFile(std::string("hist")+i+".root");
-    inFile.GetObject("efficiencyBetaRH",efficiencyBetaRH);
-    efficiencyBetaRH->Draw("SAME PLC");
-    efficiencyBetaRH->Rebin();    
-    efficiencyBetaRH->GetXaxis()->SetTitle("beta");
-    efficiencyBetaRH->GetYaxis()->SetTitle("Fraction of R-hadrons that hit detector");
-    efficiencyBetaRH->SetMaximum(1);
-    legend8->AddEntry(efficiencyBetaRH,i+std::string(" GeV"),"l");
-  }
-  TFile inFile8("hist2048.root");
-  inFile8.GetObject("efficiencyBetaRH",efficiencyBetaRH);
-  efficiencyBetaRH->Draw("SAME PLC");
-  efficiencyBetaRH->Rebin();    
-  legend8->AddEntry(efficiencyBetaRH,"2048 GeV","l");
-  gPad->SetLogy();
-  legend8->Draw();
-  canvas8->Print("efficiencyBetaRH.pdf");
+  legend4->SetBorderSize(0);
+  canvas4->Print((std::string("betaEfficiency_")+size+"_"+position+".pdf").c_str());
   
   return 0;
 }
