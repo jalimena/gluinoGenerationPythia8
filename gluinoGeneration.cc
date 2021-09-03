@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   // JA: yes, we want 2 gluinos per event
   int nGluino  = 2;
   int nEvent   = 100000;
-  int nAbort   = 10000;
+  int nAbort   = 10000;//number of events that can be aborted before it stops trying events
   int nList    = 0;
   double eCM   = 13000.; //JA: changed to 13 TeV CME
 
@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
   //Create bin widths for log scale
   const int nbins=25;
   Double_t xbins[nbins+1];
-  double dx = 3.5/nbins;
+  double dx = 3./nbins;
   for (int i=0;i<=nbins;i++) {
     xbins[i] = exp(log(10)*i*dx);
   }
@@ -138,40 +138,41 @@ int main(int argc, char* argv[]) {
   double betaMin=0.;
   double betaMax=1.;
   double betaBinWidth=(betaMax-betaMin)/nbins;
-
+  /*// Binning for p histograms
+  double pMin=0.;
+  double pMax=1000.;
+  double pBinWidth=(pMax-pMin)/nbins;*/ //use for linear scale of momentum plots
   // Histograms.
   // JA: Jasmine, you can add more histograms here
-  TH1F *nChargedH = new TH1F("nChargedH", "charged multiplicity", 100, -0.5, 799.5);
+  //  TH1F *nChargedH = new TH1F("nChargedH", "charged multiplicity", 100, -0.5, 799.5);
   TH1F *chargeRH = new TH1F("chargeRH", "charge of R-hadrons", 61, -10, 10);
-  TH1F *dndyChargedH = new TH1F("dndyChargedH", "dn/dy charged", 100, -10., 10.);
-  TH1F *dndyRH = new TH1F("dndyRH", "dn/dy R-hadrons", 100, -5., 5.);
-  TH1F *pTRH = new TH1F("pTRH", "pT of R-hadrons",nbins,xbins);//log scale
+  //  TH1F *dndyChargedH = new TH1F("dndyChargedH", "dn/dy charged", 100, -10., 10.);
+  //  TH1F *dndyRH = new TH1F("dndyRH", "dn/dy R-hadrons", 100, -5., 5.);
+  TH1F *pRH = new TH1F("pRH", "p of R-hadrons",nbins,xbins);//log scale
   TH1F *etaRH = new TH1F("etaRH", "eta of R-hadrons", 50, -5, 5);
   TH1F *thetaRH = new TH1F("thetaRH", "theta of R-hadrons", 50, -0, 3.2);
-  TH1F *xRH = new TH1F("xRH", "p_RHadron / p_sparticle", 100, 0.9, 1.1);
-  TH1F *mDiff = new TH1F("mDiff", "m(Rhadron) - m(sparticle)", 100, 0., 5.);
-  TH1F *decVtx = new TH1F("decVtx", "R-hadron decay vertex (mm from origin)", 100, 0., 1000.);
+  //  TH1F *xRH = new TH1F("xRH", "p_RHadron / p_sparticle", 100, 0.9, 1.1);
+  //  TH1F *mDiff = new TH1F("mDiff", "m(Rhadron) - m(sparticle)", 100, 0., 5.);
+  //  TH1F *decVtx = new TH1F("decVtx", "R-hadron decay vertex (mm from origin)", 100, 0., 1000.);
   TH1F *phiRH = new TH1F("phiRH", "Phi of R-hadrons", 20, -3.2, 3.2);
   //TH1F *phiPosRH = new TH1F("phiPosRH", "Phi (position) of R-hadrons", 20, -3.2, 3.2);
   //TH1F *phiVelRH = new TH1F("phiVelRH", "Phi (velocity) of R-hadrons", 20, -3.2, 3.2);
   TH1F *betaRH = new TH1F("betaRH", "Beta of R-hadrons", nbins, betaMin,betaMax );
-  TH1F *acceptedPTRH = new TH1F("acceptedPTRH", "pT of R-hadrons that hit detector",nbins,xbins);//log scale
+  TH1F *acceptedPRH = new TH1F("acceptedPRH", "p of R-hadrons that hit detector",nbins,xbins);//log scale
   TH1F *acceptedBetaRH = new TH1F("acceptedBetaRH", "Beta of R-hadrons that hit detector", nbins, betaMin, betaMax);
-  TH1F *distanceRH = new TH1F("distanceRH", "Distance R-hadron travels through detector", 30, 0.,3 );
-  TH1F *absorbedBetaRH = new TH1F("absorbedBetaRH", "Beta of R-hadrons that are absorbed by detector", nbins, betaMin, betaMax);
-  TH1F *absorbedPTRH = new TH1F("absorbedPTRH", "pT of R-hadrons that are absorbed by detector",nbins,xbins);//log scale
+  //  TH1F *distanceRH = new TH1F("distanceRH", "Distance R-hadron travels through detector", 30, 0.,3 );
   
   // Set detector position and size 
+  double pi = 3.14159265358979323;
   double magneticField1=3.8;
   double magneticField2=1;
-  double fieldRadius=2.95; //radius of magetic field
-  double fieldLength=6.45;
+  double fieldRadius=3.2; //radius of magetic field
+  double fieldLength=6.8;
   double detectorWidth;//side lengths of detector face facing detector 
   double detectorDepth=2;
   double cmsRadius=7.38; 
   double cmsLength=10.91;
-  double detectorHeight;//height of detector above beamline for the case of the detector in front of CMS
-  double detectorDistance;//distance of detector infront of collision point for the case of the detector in front of CMS
+  double detectorHeight=2;//height of detector above beamline for the case of the detector in front of CMS
   int detectorPosition;//0 if detctor above collision point, 1 for detctor diagonal to collision point
   if(argc==2){ //if detector size and position is not specified from command line
     detectorWidth=2; //default values
@@ -180,25 +181,8 @@ int main(int argc, char* argv[]) {
   else{ 
     detectorWidth=atof(argv[2]);
     detectorPosition=atoi(argv[3]);
-    if(detectorPosition==1){
-         if(argc==5||argc==4){//if height or distance isn't set use default values
-	detectorHeight=3;
-	detectorDistance=cmsLength;
-      }
-      else{
-	detectorHeight=atof(argv[4]);
-	detectorDistance=atof(argv[5]);
-      }
-    }
   }
-  //cout<<detectorPosition;
-  
-  //double acceptanceAngle=atan(detectorWidth/(2*cmsRadius)); //max phi for a particle to hit detector
-  double pi = 3.14159265358979323;
-  //  double maxAcceptanceEta=log(tan((pi/2+acceptanceAngle)/2)); //max eta for a particle to hit detector
-  //  double minAcceptanceEta=log(tan((pi/2-acceptanceAngle)/2)); //min eta for a particle to hit detector
-  //  double maxAcceptanceTheta=pi/2+acceptanceAngle; //max theta for a particle to hit detector
-  //  double minAcceptanceTheta=pi/2-acceptanceAngle; //min theta for a particle to hit detector
+
   // R-hadron flavour composition.
   map<int, int> flavours;
 
@@ -210,7 +194,6 @@ int main(int argc, char* argv[]) {
     if (!pythia.next()) {
       cout<< "Event aborted\n";
       if (++iAbort < nAbort) continue;
-      //      cout << " Event generation aborted prematurely, owing to error!\n";
       break;
     }
     // Loop over final charged particles in the event.
@@ -223,19 +206,19 @@ int main(int argc, char* argv[]) {
         pSum += event[i].p();
         if (event[i].isCharged()) {
 	  ++nCharged;
-          dndyChargedH->Fill( event[i].y() );
+	  //          dndyChargedH->Fill( event[i].y() );
         }
       }
     }
-    nChargedH->Fill( nCharged );
+    //    nChargedH->Fill( nCharged );
 
     // Loop over final R-hadrons in the event: kinematic distribution
     for (int i = 0; i < event.size(); ++i) {
       int idAbs = event[i].idAbs();
       if (idAbs > 1000100 && idAbs < 2000000 && idAbs != 1009002) {
         ++flavours[ event[i].id() ];
-        dndyRH->Fill( event[i].y() );
-        pTRH->Fill( event[i].pT() );
+	//        dndyRH->Fill( event[i].y() );
+        pRH->Fill( event[i].pAbs() );
 	double eta = event[i].eta();
 	etaRH->Fill(eta);
 	double theta = 2*atan(exp(-eta));
@@ -249,8 +232,6 @@ int main(int argc, char* argv[]) {
 	double beta=sqrt(p2/(p2+m2));
 	betaRH->Fill(beta);
 	
-	//double phiPos;
-	//double phiVel;
 	double betaT=event[i].pT()/sqrt(p2+m2);//transverse velocity
 	double betaZ=sqrt(beta*beta-betaT*betaT);//Z velocity
 
@@ -265,37 +246,24 @@ int main(int argc, char* argv[]) {
 	    double curvatureRadius2=event[i].m()*betaT*1000000000/(299792458*abs(charge)*magneticField2);// radius of curvature due to outer magenetic field
 	    double deltaPhiVel1=acos(1-fieldRadius*fieldRadius/(2*curvatureRadius1*curvatureRadius1));// change in angle due to inner field
 	    double deltaPhiVel2=acos(1-(cmsRadius-fieldRadius)*(cmsRadius-fieldRadius)/(2*curvatureRadius2*curvatureRadius2));// change in angle due to residual field
-	 
-	    /*phiVel=phi+(charge/abs(charge))*deltaPhiVel;//phi of velocity vector after magnetic field
-	      if(phiVel>pi){phiVel-=2*pi;}//loop phi to keep in range [-pi,pi]
-	      if(phiVel<-pi){phiVel+=2*pi;}
-	      double deltaPhiPos=asin(detectorWidth/cmsRadius*sin(pi-deltaPhiVel/2));
-	      phiPos=phi+(charge/abs(charge))*(deltaPhiVel-deltaPhiPos);//phi of position vector when particle reached detector
-	      if(phiPos>pi){phiVel-=2*pi;}
-	      if(phiPos<-pi){phiVel+=2*pi;}*/
 	    //	  double lT=curvatureRadius*deltaPhiVel; //distance travelled in transverse direction in magnetic field
 	    lZ1=curvatureRadius1*deltaPhiVel1*betaZ/betaT; //distance travelled in z direction in inner magnetic field
 	    lZ2=curvatureRadius2*deltaPhiVel2*betaZ/betaT;//distance travelled in Z direction in residual magnetic field
 	  }
 	  else{
-	    //phiPos=phi;//if particle not charged angles are not affected by magnetic field
-	    //phiVel=phi;
 	    lZ1=fieldRadius*betaZ/betaT;
 	    lZ2=(cmsRadius-fieldRadius)*betaZ/betaT;
 	  }
-	  //phiPosRH->Fill(phiPos);
-	  //phiVelRH->Fill(phiVel);
-	  //if(thetaVel>pi/2){thetaVel=-thetaVel+pi;}
 
 	  //Check if event would hit detector
 	  if(lZ1<fieldLength){ //particle leaves magnetic field through curved face
-	    if(lZ1+lZ2<detectorWidth/2 && lZ1+lZ2>-detectorWidth/2){  
+	    if(lZ1+lZ2<detectorWidth/2 && lZ1+lZ2>-detectorWidth/2){//particle hits absorber position 0   
 	      double radius=sqrt((lZ1+lZ2)*(lZ1*lZ2)+(cmsRadius*cmsRadius));
 	      double phiMax=asin(detectorWidth/(2*radius));
 	      if(phi>=-phiMax && phi<phiMax){
-		acceptedPTRH->Fill( event[i].pT() );
+		acceptedPRH->Fill( event[i].pAbs() );
 		acceptedBetaRH->Fill(sqrt(p2/(p2+m2)) );
-	      //Find distance travelled through detector
+	      //Find distance travelled through detector (no longer works since angles needed are no longer being calculated)
 	      /*double distX=(detectorWidth/2-cmsRadius*sin(abs(phiPos)));
 		double distZ=(detectorWidth/2-abs(lZ)-abs(lZMag));
 		double distY=min(distZ*tan(thetaVel),distX/tan(abs(phiVel)));
@@ -333,7 +301,7 @@ int main(int argc, char* argv[]) {
 	    if(lTTotal>=detectorHeight-detectorDepth*tan(theta) && lTTotal<detectorHeight+detectorWidth){//particle has transverse displacement to hit detector
 	      double phiMax=asin(detectorWidth/(2*lTTotal));
 	      if(phi>=-phiMax && phi<phiMax){//particle has phi to hit detector
-		acceptedPTRH->Fill( event[i].pT() );
+		acceptedPRH->Fill( event[i].pAbs() );
 		acceptedBetaRH->Fill(sqrt(p2/(p2+m2)) );
 	      }
 	    }
@@ -344,15 +312,15 @@ int main(int argc, char* argv[]) {
         int iMother = i;
         while( event[iMother].statusAbs() > 100)
           iMother = event[iMother].mother1();
-        double xFrac = event[i].pAbs() / event[iMother].pAbs();
-        xRH->Fill( xFrac);
-        double mShift = event[i].m() - event[iMother].m();
-        mDiff->Fill( mShift );
+        //double xFrac = event[i].pAbs() / event[iMother].pAbs();
+        //xRH->Fill( xFrac);
+        //double mShift = event[i].m() - event[iMother].m();
+        //mDiff->Fill( mShift );
         // Separation of R-hadron decay vertex from origin.
         // Don't be fooled by pAbs(); it gives the three-vector length
         // of any Vec4, also one representing spatial coordinates.
-        double dist = event[i].vDec().pAbs();
-        decVtx->Fill( dist);
+        //double dist = event[i].vDec().pAbs();
+        //decVtx->Fill( dist);
 
         // This is a place where you could allow a R-hadron shift of
         // identity, momentum and decay vertex to allow for detector effects.
@@ -391,26 +359,30 @@ int main(int argc, char* argv[]) {
 
   // End of event loop.
   }
-
-  //Read absorbtion values from files
+  std::cout<<"end of event loop \n";
+  //Read absorption values from files
   string betaLine;
   double betaCentre[320];
   string betaAbsLine;
   double betaAbs[320];
-  string pTLine;
-  double pTCentre[320];
-  string pTAbsLine;
-  double pTAbs[320];
+  //string pLine;
+  double pCentre[320];
+  //string pAbsLine;
+  //double pAbs[320];
   int nBeta;//number of values in beta file
-  int nPT;//number of values in pt files
+  //int nPT;//number of values in pt files
   ifstream betaFile (std::string("totalabs_beta_")+argv[1]+".7GeV.txt");
   if (betaFile.is_open())
     {
       int i=0;
       while ( getline (betaFile,betaLine) )
 	{
-	  betaCentre[i]=stod(betaLine);
 	  i++;
+	  if(i==1 || i==100){continue;}//first and last lines are brackets
+	  betaLine.resize(24);//remove commas
+	  betaCentre[i-2]=std::stod(betaLine);
+	  pCentre[i-2]=std::stod(argv[1])*betaCentre[i-2]/sqrt(1-betaCentre[i-2]*betaCentre[i-2]);
+	  cout<<pCentre[i-2];
 	}
       betaFile.close();
     }
@@ -421,82 +393,89 @@ int main(int argc, char* argv[]) {
       int i=0;
       while ( getline (betaAbsFile,betaAbsLine) )
 	{
-	  betaAbs[i]=stod(betaAbsLine);
 	  i++;
+	  if(i==1 || i==100){continue;}//first and last lines are brackets
+	  betaAbsLine.resize(24);//remove commas
+	  betaAbs[i-2]=std::stod(betaAbsLine);
 	}
-      nBeta=i;
+      nBeta=i-2;
       betaAbsFile.close();
     }
   else {cout << "Unable to open beta abs file"; return 0;}
-  ifstream pTFile (std::string("totalabs_energy_")+argv[1]+".7GeV.txt");
-  if (pTFile.is_open())
+  /*ifstream pFile (std::string("totalabs_energy_")+argv[1]+".7GeV.txt");
+  if (pFile.is_open())
     {
       int i=0;
-      while ( getline (pTFile,pTLine) )
+      while ( getline (pFile,pLine) )
 	{
-	  pTCentre[i]=stod(pTLine);
 	  i++;
+	  if(i==1 || i==100){continue;}//first and last lines are brackets
+	  pLine.resize(24);//remove commas
+	  pCentre[i]=stod(pLine);
 	}
-      pTFile.close();
+      pFile.close();
     }
   else {cout << "Unable to open energy file"; return 0;}
-  ifstream pTAbsFile (std::string("totalabs_energy_")+argv[1]+".7GeV_abs.txt");
-  if (pTAbsFile.is_open())
+  ifstream pAbsFile (std::string("totalabs_energy_")+argv[1]+".7GeV_abs.txt");
+  if (pAbsFile.is_open())
     {
       int i=0;
-      while ( getline (pTAbsFile,pTAbsLine) )
+      while ( getline (pAbsFile,pAbsLine) )
 	{
-	  pTAbs[i]=stod(pTAbsLine);
 	  i++;
+	  if(i==1 || i==100){continue;}//first and last lines are brackets
+	  pAbsLine.resize(24);//remove commas
+	  pAbs[i]=stod(pAbsLine);
 	}
       nPT=i;
-      pTAbsFile.close();
+      pAbsFile.close();
     }
   else {cout << "Unable to open energy abs file"; return 0;}
-
-  //plot graph of absorbtion efficiency
+  */ //momentum is being calculated from beta files so energy files aren't being used
+  //plot graph of absorption efficiency
   TGraph* betaAbsorbed = new TGraph(nBeta,betaCentre,betaAbs);
-  betaAbsorbed->SetTitle("Fraction of R-hardrons absorbed by detector;beta;Absorbtion efficiency");
+  betaAbsorbed->SetTitle("Fraction of R-hardrons absorbed by detector;beta;Absorption efficiency");
   betaAbsorbed->Draw("AC");
   betaAbsorbed->Write();
-  TGraph* pTAbsorbed = new TGraph(nPT,pTCentre,pTAbs);
-  pTAbsorbed->SetTitle("Fraction of R-hardrons absorbed by detector;Transverse Momentum [GeV];Absorbtion efficiency");
-  pTAbsorbed->Draw("AC");
-  pTAbsorbed->Write();
+  TGraph* pAbsorbed = new TGraph(nBeta,pCentre,betaAbs);
+  pAbsorbed->SetTitle("Fraction of R-hardrons absorbed by detector;Transverse Momentum [GeV];Absorption efficiency");
+  pAbsorbed->Draw("AC");
+  pAbsorbed->Write();
 
-  //Find average absorbtion 
-  double nbinsWidth=(betaMax-betaMin)/nbins;
+  //Find average absorption 
+  //double nbinsWidth=(betaMax-betaMin)/nbins;
   double averageBetaAbs[nbins];
-  double averagePTAbs[nbins];
+  double averagePAbs[nbins];
   double betaEfficiency[nbins];
   double betaErrorUp[nbins];
   double betaErrorLow[nbins];
-  double pTEfficiency[nbins];
-  double pTErrorUp[nbins];
-  double pTErrorLow[nbins];
+  double pEfficiency[nbins];
+  double pErrorUp[nbins];
+  double pErrorLow[nbins];
   for(int i=0; i<nbins; i++){//for all bins in betaRH hist
     int j=0;
     averageBetaAbs[i]=0;
-    for(int k=0; k<nBeta; k++){//for all values in absorbtion files
-      if(betaCentre[k]>=betaMin+nbinsWidth*i && betaCentre[i]<betaMin+nbinsWidth*(i+1)){
+    for(int k=0; k<nBeta; k++){//for all values in absorption files
+      if(betaCentre[k]>=betaMin+betaBinWidth*i && betaCentre[k]<betaMin+betaBinWidth*(i+1)){
 	j++;
-	averageBetaAbs[i]+=betaAbs[k];//sum all absorbtion values within each betaRH bin
+	averageBetaAbs[i]+=betaAbs[k];//sum all absorption values within each betaRH bin
       }
     }
     if(j==0){averageBetaAbs[i]=0;}
     else{averageBetaAbs[i]/=j;}//find average absorption efficiency for each betaRH bin
   }
-  for(int i=0; i<nbins; i++){//for all bins in pTRH hist
+  for(int i=0; i<nbins; i++){//for all bins in pRH hist
     int j=0;
-    averagePTAbs[i]=0;
-    for(int k=0; k<nPT; k++){//for all values of absorbtion files
-      if(pTCentre[k]>=xbins[i] && pTCentre[i]<xbins[i+1]){
+    averagePAbs[i]=0;
+    for(int k=0; k<nBeta; k++){//for all values of absorption files
+      if(pCentre[k]>=xbins[i] && pCentre[k]<xbins[i+1]){//use for log scale
+      //if(pCentre[k]>=pMin+pBinWidth*i && pCentre[k]<pMin+pBinWidth*(i+1)){//use for linear scale
 	j++;
-	averagePTAbs[i]+=pTAbs[k];//summ all absorbtion values within each pTRH bin
+	averagePAbs[i]+=betaAbs[k];//sum all absorption values within each pRH bin
       }
     }
-    if(j==0){averagePTAbs[i]=0;}
-    else{averagePTAbs[i]/=j;}//find average absorption efficiency for each pTRH bin
+    if(j==0){averagePAbs[i]=0;}
+    else{averagePAbs[i]/=j;}//find average absorption efficiency for each pRH bin
   }
 
   //Make efficiency plot
@@ -509,42 +488,48 @@ int main(int argc, char* argv[]) {
 	betaEfficiency[i]=betaAcceptedEff->GetEfficiency(i+1);//get efficiency values
 	betaErrorUp[i]=betaAcceptedEff->GetEfficiencyErrorUp(i+1);
 	betaErrorLow[i]=betaAcceptedEff->GetEfficiencyErrorLow(i+1);
-	betaEfficiency[i]*=averageBetaAbs[i];//get combine absorbtion efficiency and angular acceptance
+	betaEfficiency[i]*=averageBetaAbs[i];//combine absorption efficiency and angular acceptance
 	betaErrorLow[i]*=averageBetaAbs[i];
 	betaErrorUp[i]*=averageBetaAbs[i];
       }
     }
-  TEfficiency* pTAcceptedEff = 0;
-  if(TEfficiency::CheckConsistency(*acceptedPTRH,*pTRH))
+  TEfficiency* pAcceptedEff = 0;
+  if(TEfficiency::CheckConsistency(*acceptedPRH,*pRH))
     {
-      pTAcceptedEff = new TEfficiency(*acceptedPTRH,*pTRH);
-      pTAcceptedEff->Write();
+      pAcceptedEff = new TEfficiency(*acceptedPRH,*pRH);
+      pAcceptedEff->Write();
       for(int i=0;i<nbins;i++){
-	pTEfficiency[i]=pTAcceptedEff->GetEfficiency(i+1);//get efficiency values
-	pTErrorUp[i]=pTAcceptedEff->GetEfficiencyErrorUp(i+1);
-	pTErrorLow[i]=pTAcceptedEff->GetEfficiencyErrorLow(i+1);
-	pTEfficiency[i]*=averagePTAbs[i];//get combine absorbtion efficiency and angular acceptance
-	pTErrorLow[i]*=averagePTAbs[i];
-	pTErrorUp[i]*=averagePTAbs[i];
+	pEfficiency[i]=pAcceptedEff->GetEfficiency(i+1);//get efficiency values
+	pErrorUp[i]=pAcceptedEff->GetEfficiencyErrorUp(i+1);
+	pErrorLow[i]=pAcceptedEff->GetEfficiencyErrorLow(i+1);
+	pEfficiency[i]*=averagePAbs[i];//combine absorption efficiency and angular acceptance
+	pErrorLow[i]*=averagePAbs[i];
+	pErrorUp[i]*=averagePAbs[i];
       }
     }
 
   //Plot absorption graphs
   double beta[nbins];//beta bin centres for x-axis
-  double pT[nbins];//pT bin centres for x-axis
+  double p[nbins];//p bin centres for x-axis
   for(int i=0;i<nbins;i++){
-    pT[i]=(xbins[i]+xbins[i+1])/2;
-    if(i==0){beta[i]=betaBinWidth/2;}
-    else{beta[i]=beta[i-1]+betaBinWidth;}
+    p[i]=(xbins[i]+xbins[i+1])/2;//use for log scale
+    if(i==0){
+      beta[i]=betaBinWidth/2;
+      //p[i]=pBinWidth/2;//use for linear scale
+    }
+    else{
+      beta[i]=beta[i-1]+betaBinWidth;
+      //p[i]=p[i-1]+pBinWidth;//use for linear scale
+    }
   }
   auto betaEff = new TGraphAsymmErrors(nbins,beta,betaEfficiency,0,0,betaErrorLow,betaErrorUp);
-  betaEff->SetTitle("Fraction of R-hardrons absorbed by detector;beta;Absorbtion efficiency");
+  betaEff->SetTitle("Fraction of R-hardrons absorbed by detector;beta;Absorption efficiency");
   betaEff->Draw("AC");
   betaEff->Write();
-  auto pTEff = new TGraphAsymmErrors(nbins,pT,pTEfficiency,0,0,pTErrorLow,pTErrorUp);
-  pTEff->SetTitle("Fraction of R-hardrons absorbed by detector;Transverse Momentum [GeV];Absorbtion efficiency");
-  pTEff->Draw("AC");
-  pTEff->Write();
+  auto pEff = new TGraphAsymmErrors(nbins,p,pEfficiency,0,0,pErrorLow,pErrorUp);
+  pEff->SetTitle("Fraction of R-hardrons absorbed by detector;Transverse Momentum [GeV];Absorption efficiency");
+  pEff->Draw("AC");
+  pEff->Write();
 
   // Final statistics, flavour composition and histogram output.
   pythia.stat();
@@ -556,25 +541,25 @@ int main(int argc, char* argv[]) {
     << setw(8) << flavNow->second << endl;
   
   //write histograms to output file and close it
-  nChargedH->Write();
-  dndyChargedH->Write();
+  //  nChargedH->Write();
+  //  dndyChargedH->Write();
   chargeRH->Write();
-  dndyRH->Write();
-  pTRH->Write();
+  //  dndyRH->Write();
+  pRH->Write();
   etaRH->Write();
   thetaRH->Write();
-  xRH->Write();
-  mDiff->Write();
-  decVtx->Write();
+  //  xRH->Write();
+  //  mDiff->Write();
+  //  decVtx->Write();
   phiRH->Write();
   //phiPosRH->Write();
   //phiVelRH->Write();
   betaRH->Write();
   acceptedBetaRH->Write();
-  acceptedPTRH->Write();
-  absorbedBetaRH->Write();
-  absorbedPTRH->Write();
-  distanceRH->Write();
+  acceptedPRH->Write();
+  //  absorbedBetaRH->Write();
+  //  absorbedPTRH->Write();
+  //  distanceRH->Write();
   
   delete outFile;
 
