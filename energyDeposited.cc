@@ -28,13 +28,20 @@ int energyDeposited() {
   double ionPairs[vectLength];
 
   //cost of liquid argon in euros
-  //x=rod spacing, assuming 1kg LAr = 0.7 euros = 1230 cm^3, 200 rods in one dimension
-  TF1 *cost = new TF1("cost","23*(x^2+2*x)",0,3);
+  //x=rod spacing, assuming 1kg LAr = 0.7 euros = 700 cm^3, 200 rods in one dimension
+  //cost = 8000*(x^2+2*x) [euros]
+  //cost = 8*(x^2+2*x) [10^3 euros]
+  double maxEnergyDeposited = 300; //GeV
+  double maxCost = 200; //10^3 euros
+  double maxRodSpacing = 3; //cm
+
+  //cost, but scale by maxEnergyDeposited/maxCost to fit on the axis
+  TF1 *cost = new TF1("cost","8*(x^2+2*x)*300/200",0,3);
   cost->SetLineWidth(3);
   cost->SetLineStyle(2);
 
-  TGaxis *rightAxis = new TGaxis(3, 0, 3, 350, 0, 350, 510, "+L");
-  rightAxis->SetTitle("Cost of liquid argon [euros]");
+  TGaxis *rightAxis = new TGaxis(maxRodSpacing, 0, maxRodSpacing, maxEnergyDeposited, 0, maxCost, 510, "+L");
+  rightAxis->SetTitle("Cost of liquid argon [10^{3} euros]");
   rightAxis->SetTitleOffset(1.5);
   rightAxis->SetLabelOffset(0.01);
   rightAxis->SetLabelColor(2);
@@ -61,10 +68,10 @@ int energyDeposited() {
     if(i==4){
       graph[i]->Draw("AL PLC");
       graph[i]->SetTitle(";Rod spacing [cm];Energy deposited [GeV]");
-      graph[i]->SetMaximum(350);
+      graph[i]->SetMaximum(maxEnergyDeposited);
       graph[i]->SetMinimum(0);
       gPad->SetLogy();
-      graph[i]->GetXaxis()->SetRangeUser(0,3);
+      graph[i]->GetXaxis()->SetRangeUser(0,maxRodSpacing);
     }
     else{graph[i]->Draw("L SAME PLC");}
     legend->AddEntry(graph[i],deltaMass[i]+std::string(" GeV"),"l");
@@ -96,7 +103,7 @@ int energyDeposited() {
       graph[i]->SetMaximum(1.3*pow(10,10));
       graph[i]->SetMinimum(0);
       gPad->SetLogy();
-      graph[i]->GetXaxis()->SetRangeUser(0,3);
+      graph[i]->GetXaxis()->SetRangeUser(0,maxRodSpacing);
     }
     else{graph[i]->Draw("L SAME PLC");}
     legend1->AddEntry(graph[i],deltaMass[i]+std::string(" GeV"),"l");
