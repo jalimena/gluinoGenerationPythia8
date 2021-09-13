@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
   // This is based on the width being less than 0.2 GeV by default.
   //pythia.readString("SLHA:file = sps1aNarrowStopGluino.spc");
   // JA: put in HSCP gluino SLHA file with mass of 300 GeV
-  pythia.readString(std::string("SLHA:file = HSCP_gluino_")+argv[1]+"_SLHA.spc");
+  pythia.readString(std::string("SLHA:file = data/HSCP_gluino_")+argv[1]+"_SLHA.spc");
 
   // Further hacked file, to test R-parity violating gluino decay.
   //pythia.readString("SLHA:file = sps1aNarrowStopGluinoRPV.spc");
@@ -371,7 +371,7 @@ int main(int argc, char* argv[]) {
   //double pAbs[320];
   int nBeta;//number of values in beta file
   //int nPT;//number of values in pt files
-  ifstream betaFile (std::string("totalabs_beta_")+argv[1]+".7GeV.txt");
+  ifstream betaFile (std::string("data/totalabs_beta_")+argv[1]+".7GeV.txt");
   if (betaFile.is_open())
     {
       int i=0;
@@ -387,7 +387,7 @@ int main(int argc, char* argv[]) {
       betaFile.close();
     }
   else {cout << "Unable to open beta file"; return 0;}
-  ifstream betaAbsFile (std::string("totalabs_beta_")+argv[1]+".7GeV_abs.txt");
+  ifstream betaAbsFile (std::string("data/totalabs_beta_")+argv[1]+".7GeV_abs.txt");
   if (betaAbsFile.is_open())
     {
       int i=0;
@@ -402,7 +402,7 @@ int main(int argc, char* argv[]) {
       betaAbsFile.close();
     }
   else {cout << "Unable to open beta abs file"; return 0;}
-  /*ifstream pFile (std::string("totalabs_energy_")+argv[1]+".7GeV.txt");
+  /*ifstream pFile (std::string("data/totalabs_energy_")+argv[1]+".7GeV.txt");
   if (pFile.is_open())
     {
       int i=0;
@@ -416,7 +416,7 @@ int main(int argc, char* argv[]) {
       pFile.close();
     }
   else {cout << "Unable to open energy file"; return 0;}
-  ifstream pAbsFile (std::string("totalabs_energy_")+argv[1]+".7GeV_abs.txt");
+  ifstream pAbsFile (std::string("data/totalabs_energy_")+argv[1]+".7GeV_abs.txt");
   if (pAbsFile.is_open())
     {
       int i=0;

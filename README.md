@@ -23,7 +23,7 @@ So then it should look like my ```Makefile.inc``` included here
 do:
 ```gmake```
 
-copy gluinoGeneration.cc, HSCP_gluino_300_SLHA.spc, and Makefile to the examples/ directory
+copy gluinoGeneration.cc, data/HSCP_gluino_300_SLHA.spc, and Makefile to the examples/ directory
 
 compile gluinoGeneration.cc with:
 ```make gluinoGeneration```
