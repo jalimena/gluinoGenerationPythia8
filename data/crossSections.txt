@@ -1,0 +1,14 @@
+gluino cross sections, at sqrt(s)=13 TeV
+from pythia
+
+Mass [GeV]	Cross section [fb]	Cross section uncertainty [fb]
+5    		2.897e12      		4.652e9
+10		3.473e11		5.813e8
+20		3.236e10		5.624e7
+40		2.422e9   		4.351e6
+80		1.443e8   		2.673e5
+160		2.673e5   		1.250e4
+320		2.163e5   		4.067e2
+640		4.221e3   		7.809e0
+1280		3.254e1   		5.898e-2
+2560		2.863e-2  		5.063e-5
