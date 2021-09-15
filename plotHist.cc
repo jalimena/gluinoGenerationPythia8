@@ -9,6 +9,8 @@
 int plotHist(char* size, char* position) {
 
   setTDRStyle(); 
+  gStyle->SetOptStat(0);
+  gStyle->SetPadRightMargin(0.05);
 
   //plot beta, accepted beta, p, acceptred p and angle distributions
   //acceptedBeta and acceptedP are total number of accepted particles, not fraction that are accepted 
@@ -27,27 +29,39 @@ int plotHist(char* size, char* position) {
     auto canvas=new TCanvas("canvas","canvas");
     TH1F* hist[i];
     TH1::AddDirectory(kFALSE);
-    auto* legend = new TLegend(0.75,0.94,0.9,0.65);
-    gStyle->SetOptStat(0);
+    auto* legend = new TLegend(0.65,0.45,0.9,0.9); //beta, theta
+    auto* legendM = new TLegend(0.25,0.45,0.5,0.9); //momentum
+    legend->SetBorderSize(0);
+    legendM->SetBorderSize(0);
     legend->AddEntry((TObject*)0,"gluino mass","");
+    legendM->AddEntry((TObject*)0,"gluino mass","");
+
     for(int j=9; j>-1; j-=1){//for each mass point
       TFile inFile(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
       inFile.GetObject(name[i],hist[i]);//get saved histogram
       if(j==9){
 	hist[i]->Draw("");
 	hist[i]->SetMaximum(max[i]);
-	hist[i]->SetTitle((std::string(";")+axis[i]+";Counts").c_str());
+	hist[i]->SetTitle((std::string(";")+axis[i]+";Entries").c_str());
       }
       else{hist[i]->Draw("SAME");}//plot all masses on the same canvas
       hist[i]->SetLineColor(lineColour[j]);
+      hist[i]->SetLineWidth(3);
+      hist[i]->GetXaxis()->SetTitleOffset(1.1);
+      hist[i]->GetXaxis()->SetTitleSize(0.045);
       legend->AddEntry(hist[i],mass[j]+std::string(" GeV"),"l");
+      legendM->AddEntry(hist[i],mass[j]+std::string(" GeV"),"l");
     }
     //add log scale if needed
     if(logScale[i]==1){gPad->SetLogy();}
     else if(logScale[i]==2){gPad->SetLogx();}
     else if(logScale[i]==3){gPad->SetLogy();gPad->SetLogx();}
-    legend->Draw();
-    legend->SetBorderSize(0);
+
+    if(i==1){ //momentum plot
+      legendM->Draw();
+    }
+    else legend->Draw();
+
     if(i==5){//draw angular acceptance on theta plot
       double pi=3.14159265358979;
       double thetaAcceptance0low=pi/2+atan(1/7.38);
@@ -64,14 +78,16 @@ int plotHist(char* size, char* position) {
       thetaAcceptanceHist1->Draw("B SAME");
       thetaAcceptanceHist1->SetFillColor(kGray);
       thetaAcceptanceHist1->SetFillStyle(3154);
-      TPaveText *pt1 = new TPaveText(.21,.8,.33,.7,"brNDC");
+
+      TPaveText *pt1 = new TPaveText(.18,.75,.35,.9,"brNDC");
       pt1->AddText("Absorber");
       pt1->AddText("position 1");
       pt1->AddText("acceptance");
       pt1->Draw();
       pt1->SetBorderSize(0);
       pt1->SetFillStyle(0);
-      TPaveText *pt0 = new TPaveText(.54,.8,.66,.7,"brNDC");
+
+      TPaveText *pt0 = new TPaveText(.46,.75,.63,.9,"brNDC");
       pt0->AddText("Absorber");
       pt0->AddText("position 0");
       pt0->AddText("acceptance");
@@ -87,7 +103,6 @@ int plotHist(char* size, char* position) {
   TEfficiency * betaAcceptance;
   TH1::AddDirectory(kFALSE);
   auto *legend1 = new TLegend(0.7,0.94,0.85,0.75);
-  gStyle->SetOptStat(0);
   legend1->AddEntry((TObject*)0,"gluino mass","");
   for(int j=1; j<10; j+=4){
     TFile infile1(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
@@ -126,7 +141,6 @@ int plotHist(char* size, char* position) {
   TEfficiency * pAcceptance; 
   TH1::AddDirectory(kFALSE);
   auto* legend2 = new TLegend(0.8,0.9,0.99,0.5);
-  gStyle->SetOptStat(0);
   legend2->AddEntry((TObject*)0,"gluino mass","");
   for(int j=1; j<10; j+=4){
     TFile infile2(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
@@ -159,7 +173,6 @@ int plotHist(char* size, char* position) {
   TGraphAsymmErrors * pEfficiency; 
   TH1::AddDirectory(kFALSE);
   auto* legend3 = new TLegend(0.2,0.94,0.35,0.6);
-  gStyle->SetOptStat(0);
   legend3->AddEntry((TObject*)0,"gluino mass","");
   for(int j=1; j<10; j+=2){//only plot every other mass point so eaier to see 
     TFile infile3(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
@@ -194,7 +207,6 @@ int plotHist(char* size, char* position) {
   TH1::AddDirectory(kFALSE);
   auto *legend4 = new TLegend(0.8,0.94,0.95,0.6);//use for position 0
   //auto *legend4 = new TLegend(0.2,0.94,0.35,0.6);//use for position 1
-  gStyle->SetOptStat(0);
   legend4->AddEntry((TObject*)0,"gluino mass","");
   for(int j=0; j<10; j+=1){
     TFile infile4(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
