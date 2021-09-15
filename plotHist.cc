@@ -174,7 +174,8 @@ int plotHist(char* size, char* position) {
   TH1::AddDirectory(kFALSE);
   auto* legend3 = new TLegend(0.2,0.94,0.35,0.6);
   legend3->AddEntry((TObject*)0,"gluino mass","");
-  for(int j=1; j<10; j+=2){//only plot every other mass point so eaier to see 
+  //for(int j=1; j<10; j+=2){//only plot every other mass point so eaier to see 
+  for(int j=9; j>-1; j-=2){//for each mass point
     TFile infile3(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
     infile3.GetObject("Graph;4",pEfficiency);
     if(j==1){  pEfficiency->Draw("AL3");
@@ -205,19 +206,22 @@ int plotHist(char* size, char* position) {
   auto canvas4=new TCanvas("canvas4","canvas4");
   TGraphAsymmErrors * betaEfficiency; 
   TH1::AddDirectory(kFALSE);
-  auto *legend4 = new TLegend(0.8,0.94,0.95,0.6);//use for position 0
-  //auto *legend4 = new TLegend(0.2,0.94,0.35,0.6);//use for position 1
+  auto* legend4 = new TLegend(0.69,0.53,0.94,0.93);//use for position 0
+  //auto* legend4 = new TLegend(0.2,0.53,0.45,0.93);//use for position 1
+
   legend4->AddEntry((TObject*)0,"gluino mass","");
-  for(int j=0; j<10; j+=1){
+  for(int j=9; j>-1; j-=1){//for each mass point
     TFile infile4(std::string("hist")+mass[j]+"_"+size+"_"+position+".root");
     infile4.GetObject("Graph;3",betaEfficiency);
-    if(j==0){
+    if(j==9){
       betaEfficiency->Draw("AL3");
       betaEfficiency->SetMaximum(0.002);
       betaEfficiency->SetMinimum(0);
       betaEfficiency->SetTitle(";#beta;Absorption efficiency x acceptance");
       TAxis *xaxis0 = betaEfficiency->GetXaxis();
       xaxis0->SetLimits(0.1,1.);
+      xaxis0->SetTitleSize(0.045);
+      betaEfficiency->GetYaxis()->SetTitleSize(0.045);
     }
     
     else{betaEfficiency->Draw("L3 SAME");}
@@ -227,7 +231,8 @@ int plotHist(char* size, char* position) {
     betaEfficiency->SetLineColor(lineColour[j]);
   }
   //write detector position and size
-  TPaveText *pt = new TPaveText(.4,.93,.65,.85,"brNDC");
+  TPaveText *pt = new TPaveText(.30,.85,.70,.93,"brNDC"); //use for position 0
+  //TPaveText *pt = new TPaveText(.40,.85,.80,.93,"brNDC"); //use for position 1
   pt->AddText((std::string("Absorber position ")+position).c_str());
   pt->AddText((size+std::string("m x ")+size+"m x 2m").c_str());
   pt->Draw();
