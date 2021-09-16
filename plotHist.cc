@@ -229,6 +229,15 @@ int plotHist(char* size, char* position) {
     betaEfficiency->SetFillStyle(fillStyle[j]);
     betaEfficiency->SetFillColor(fillColour[j]);
     betaEfficiency->SetLineColor(lineColour[j]);
+
+    //print the total eff x acc per mass point
+    double sum = 0.;
+    for(int k=2; k<betaEfficiency->GetN(); k++){ //start from k=2, which is 0.1 in beta
+      sum += betaEfficiency->GetPointY(k);
+      //std::cout<<"  the x value of point "<<k<<" is: "<<betaEfficiency->GetPointX(k)<<std::endl;
+      //std::cout<<"  the y value of point "<<k<<" is: "<<betaEfficiency->GetPointY(k)<<std::endl;
+    }
+    std::cout<<"For mass "<<mass[j]<<", the sum of the y points of the Absorption efficiency x acceptance vs beta histogram is: "<<sum<<std::endl;
   }
   //write detector position and size
   TPaveText *pt = new TPaveText(.30,.85,.70,.93,"brNDC"); //use for position 0
