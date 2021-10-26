@@ -79,17 +79,15 @@ int plotHist(char* size, char* position) {
       thetaAcceptanceHist1->SetFillColor(kGray);
       thetaAcceptanceHist1->SetFillStyle(3154);
 
-      TPaveText *pt1 = new TPaveText(.18,.75,.35,.9,"brNDC");
-      pt1->AddText("Absorber");
-      pt1->AddText("position 1");
+      TPaveText *pt1 = new TPaveText(.18,.8,.35,.9,"brNDC");
+      pt1->AddText("Absorber P_{1}");
       pt1->AddText("acceptance");
       pt1->Draw();
       pt1->SetBorderSize(0);
       pt1->SetFillStyle(0);
 
-      TPaveText *pt0 = new TPaveText(.46,.75,.63,.9,"brNDC");
-      pt0->AddText("Absorber");
-      pt0->AddText("position 0");
+      TPaveText *pt0 = new TPaveText(.46,.8,.63,.9,"brNDC");
+      pt0->AddText("Absorber P_{0}");
       pt0->AddText("acceptance");
       pt0->Draw();
       pt0->SetBorderSize(0);
@@ -129,8 +127,8 @@ int plotHist(char* size, char* position) {
   legend1->SetBorderSize(0);
   //write absorber position and size
   TPaveText *pt0 = new TPaveText(.4,.93,.65,.85,"brNDC");
-  pt0->AddText((std::string("Absorber position ")+position).c_str());
-  pt0->AddText((size+std::string("m x ")+size+"m x 2m").c_str());
+  pt0->AddText((std::string("Absorber P_{")+position+std::string("}")).c_str());
+  pt0->AddText((size+std::string("m #times ")+size+"m #times 2m").c_str());
   pt0->Draw();
   pt0->SetBorderSize(0);
   pt0->SetFillStyle(0);
@@ -194,7 +192,7 @@ int plotHist(char* size, char* position) {
   //write detector size and position
   TPaveText *pt1 = new TPaveText(.4,.93,.65,.85,"brNDC");
   pt1->AddText((std::string("Detector position ")+position).c_str());
-  pt1->AddText((size+std::string("m x ")+size+"m x 2m").c_str());
+  pt1->AddText((size+std::string("m #times ")+size+"m #times 2m").c_str());
   pt1->Draw();
   pt1->SetBorderSize(0);
   pt1->SetFillStyle(0);
@@ -217,11 +215,16 @@ int plotHist(char* size, char* position) {
       betaEfficiency->Draw("AL3");
       betaEfficiency->SetMaximum(0.002);
       betaEfficiency->SetMinimum(0);
-      betaEfficiency->SetTitle(";#beta;Absorption efficiency x acceptance");
+      betaEfficiency->SetTitle(";#beta;Absorption efficiency #times acceptance");
       TAxis *xaxis0 = betaEfficiency->GetXaxis();
       xaxis0->SetLimits(0.1,1.);
       xaxis0->SetTitleSize(0.045);
+      xaxis0->SetLabelOffset(0.01);
       betaEfficiency->GetYaxis()->SetTitleSize(0.045);
+      betaEfficiency->GetYaxis()->SetMaxDigits(4);
+      betaEfficiency->GetYaxis()->SetDecimals();
+      betaEfficiency->GetYaxis()->SetRangeUser(0,0.0006); //use for position 0
+      //betaEfficiency->GetYaxis()->SetRangeUser(0,0.004); //use for position 1
     }
     
     else{betaEfficiency->Draw("L3 SAME");}
@@ -242,8 +245,8 @@ int plotHist(char* size, char* position) {
   //write detector position and size
   TPaveText *pt = new TPaveText(.30,.85,.70,.93,"brNDC"); //use for position 0
   //TPaveText *pt = new TPaveText(.40,.85,.80,.93,"brNDC"); //use for position 1
-  pt->AddText((std::string("Absorber position ")+position).c_str());
-  pt->AddText((size+std::string("m x ")+size+"m x 2m").c_str());
+  pt->AddText((std::string("Absorber P_{")+position+std::string("}")).c_str());
+  pt->AddText((size+std::string("m #times ")+size+"m #times 2m").c_str());
   pt->Draw();
   pt->SetBorderSize(0);
   pt->SetFillStyle(0);
